@@ -2,9 +2,10 @@
 
 namespace AdventOfCode.Day5
 {
-    public class Seed
+    public class SeedRange
     {
-        public long Id { get; set; }
+        public long SeedRangeStart { get; set; }
+        public long SeedRangeEnd { get; set; }
     }
 
     public class Map
@@ -25,11 +26,16 @@ namespace AdventOfCode.Day5
         public static void Main(string[] args)
         {
             var almanac = FilesHelper.ReadPuzzleInputToLines().ToList();
+            
             var seeds = GetSeeds(almanac).ToList();
             var maps = MapType.AllGroups.Select(mapType => GetMapForType(mapType, almanac)).ToList();
 
-            var locations = seeds.Select(seed => GetLocation(seed, maps.ToList())).ToList();
-            Console.WriteLine($"Closest location: {locations.Min()}");
+            // var locations = seeds.Select(seed => GetLocation(seed, maps.ToList())).ToList();
+            // Console.WriteLine($"Closest location (from seeds): {locations.Min()}");
+
+            var seedRanges = GetSeedRanges(seeds).ToList();
+            var minLocation = GetMinLocation(seedRanges, maps);
+            Console.WriteLine($"Closest location (from seeds with ranges): {minLocation}");
         }
 
         private static long MapSourceToDestination(long source, List<MapRange>? mapRanges)
@@ -51,54 +57,136 @@ namespace AdventOfCode.Day5
 
             return destination;
         }
+
+        private static long MapDestinationToSource(long destination, List<MapRange>? mapRanges)
+        {
+            if (mapRanges == null)
+            {
+                return destination;
+            }
+
+            var source = destination;
+            foreach (var mapRange in mapRanges)
+            {
+                var possibleSource = destination - mapRange.SourceToDestinationDifference;
+                
+                if (mapRange.SourceRangeFirst <= possibleSource && possibleSource <= mapRange.SourceRangeLast)
+                {
+                    source = possibleSource;
+                    break;
+                }
+            }
+
+            return source;
+        }
+
+        private static long GetTransformedValue(long originalValue, IEnumerable<Map> maps, MapType mapType, bool sourceToDestination)
+        {
+            var mapRanges = maps.FirstOrDefault(map => map.MapType.Equals(mapType))?.MapRanges;
+            var transformedValue = 0L;
+            if (sourceToDestination)
+            {
+                transformedValue = MapSourceToDestination(originalValue, mapRanges);
+            }
+            else
+            {
+                transformedValue = MapDestinationToSource(originalValue, mapRanges);
+            }
+            return transformedValue;
+        }
         
-        private static long GetLocation(Seed seed, IReadOnlyCollection<Map> maps)
+        private static long GetLocation(long seed, IReadOnlyCollection<Map> maps)
         {
             // seed-to-soil
-            var seedToSoilRanges = maps.FirstOrDefault(map => map.MapType.Equals(MapType.SeedToSoil))?.MapRanges;
-            var soil = MapSourceToDestination(seed.Id, seedToSoilRanges);
+            var soil = GetTransformedValue(seed, maps, MapType.SeedToSoil, true);
 
             // soil-to-fertilizer
-            var soilToFertilizer = maps.FirstOrDefault(map => map.MapType.Equals(MapType.SoilToFertilizer))?.MapRanges;
-            var fertilizer = MapSourceToDestination(soil, soilToFertilizer);
+            var fertilizer = GetTransformedValue(soil, maps, MapType.SoilToFertilizer, true);
             
             // fertilizer-to-water
-            var fertilizerToWater = maps.FirstOrDefault(map => map.MapType.Equals(MapType.FertilizerToWater))?.MapRanges;
-            var water = MapSourceToDestination(fertilizer, fertilizerToWater);
+            var water = GetTransformedValue(fertilizer, maps, MapType.FertilizerToWater, true);
             
             // water-to-light
-            var waterToLight = maps.FirstOrDefault(map => map.MapType.Equals(MapType.WaterToLight))?.MapRanges;
-            var light = MapSourceToDestination(water, waterToLight);
+            var light = GetTransformedValue(water, maps, MapType.WaterToLight, true);
             
             // light-to-temperature
-            var lightToTemperature = maps.FirstOrDefault(map => map.MapType.Equals(MapType.LightToTemperature))?.MapRanges;
-            var temperature = MapSourceToDestination(light, lightToTemperature);
+            var temperature = GetTransformedValue(light, maps, MapType.LightToTemperature, true);
             
             // temperature-to-humidity
-            var temperatureToHumidity = maps.FirstOrDefault(map => map.MapType.Equals(MapType.TemperatureToHumidity))?.MapRanges;
-            var humidity = MapSourceToDestination(temperature, temperatureToHumidity);
+            var humidity = GetTransformedValue(temperature, maps, MapType.TemperatureToHumidity, true);
             
             // humidity-to-location
-            var humidityToLocation = maps.FirstOrDefault(map => map.MapType.Equals(MapType.HumidityToLocation))?.MapRanges;
-            var location = MapSourceToDestination(humidity, humidityToLocation);
+            var location = GetTransformedValue(humidity, maps, MapType.HumidityToLocation, true);
             
             // Console.WriteLine($"Seed: {seed.Id} | Soil: {soil} | Fertilizer: {fertilizer} | Water: {water} | Light: {light} | Temperature: {temperature} | Humidity: {humidity} | Location: {location}");
             
             return location;
         }
 
-        private static IEnumerable<Seed> GetSeeds(IEnumerable<string> almanac)
+        private static long GetMinLocation(IReadOnlyCollection<SeedRange> seedRanges, IReadOnlyCollection<Map> maps)
+        {
+            var minLocation = 0;
+            while (!IsLocationPossibleWithExistingSeeds(minLocation, maps, seedRanges))
+            {
+                minLocation++;
+            }
+
+            return minLocation;
+        }
+
+        private static bool IsLocationPossibleWithExistingSeeds(long location, IReadOnlyCollection<Map> maps, IEnumerable<SeedRange> seedRanges)
+        {
+            // location-to-humidity
+            var humidity = GetTransformedValue(location, maps, MapType.HumidityToLocation, false);
+            
+            // temperature-to-humidity
+            var temperature = GetTransformedValue(humidity, maps, MapType.TemperatureToHumidity, false);
+            
+            // light-to-temperature
+            var light = GetTransformedValue(temperature, maps, MapType.LightToTemperature, false);
+            
+            // water-to-light
+            var water = GetTransformedValue(light, maps, MapType.WaterToLight, false);
+            
+            // fertilizer-to-water
+            var fertilizer = GetTransformedValue(water, maps, MapType.FertilizerToWater, false);
+            
+            // soil-to-fertilizer
+            var soil = GetTransformedValue(fertilizer, maps, MapType.SoilToFertilizer, false);
+            
+            // soil-to-fertilizer
+            var seed = GetTransformedValue(soil, maps, MapType.SeedToSoil, false);
+
+            return seedRanges.Any(seedRange => seedRange.SeedRangeStart <= seed && seed <= seedRange.SeedRangeEnd);
+        }
+
+        private static IEnumerable<long> GetSeeds(IEnumerable<string> almanac)
         {
             var seedList = almanac
                 .FirstOrDefault(line => line.Contains("seeds"))
                 ?.Split(':', StringSplitOptions.TrimEntries)[1]
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(long.Parse);
             
-            return seedList != null 
-                ? seedList.Select(seedId => new Seed{Id = long.Parse(seedId)})
-                : new List<Seed>();
+            return seedList ?? new List<long>();
         }
 
+        private static IEnumerable<SeedRange> GetSeedRanges(IReadOnlyList<long> seeds)
+        {
+            var seedRanges = new List<SeedRange>();
+            
+            for (var i = 0; i < seeds.Count; i += 2)
+            {
+                seedRanges.Add(new SeedRange
+                {
+                    SeedRangeStart = seeds[i],
+                    SeedRangeEnd = seeds[i] + seeds[i + 1] - 1
+                });
+            }
+
+            return seedRanges;
+        }
+        
         private static Map GetMapForType(MapType mapType, IReadOnlyCollection<string> almanac)
         {
             var map = new Map
