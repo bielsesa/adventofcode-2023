@@ -9,16 +9,15 @@ namespace AdventOfCode.Day5
 
     public class Map
     {
-        public Dictionary<long, long> TotalRange { get; set; } = new();
         public MapType MapType { get; set; }
+        public List<MapRange> MapRanges { get; set; } = new();
     }
     
     public class MapRange
     {
-        public long DestinationOrigin { get; set; }
-        public long SourceOrigin { get; set; }
-        public long Step { get; set; }
-        public Dictionary<long, long> Range { get; set; } = new();
+        public long SourceRangeFirst { get; set; }
+        public long SourceRangeLast { get; set; }
+        public long SourceToDestinationDifference { get; set; }
     }
     
     public static class Day5
@@ -33,56 +32,55 @@ namespace AdventOfCode.Day5
             Console.WriteLine($"Closest location: {locations.Min()}");
         }
 
+        private static long MapSourceToDestination(long source, List<MapRange>? mapRanges)
+        {
+            if (mapRanges == null)
+            {
+                return source;
+            }
+
+            var destination = source;
+            foreach (var mapRange in mapRanges)
+            {
+                if (mapRange.SourceRangeFirst <= destination && destination <= mapRange.SourceRangeLast)
+                {
+                    destination += mapRange.SourceToDestinationDifference;
+                    break;
+                }
+            }
+
+            return destination;
+        }
+        
         private static long GetLocation(Seed seed, IReadOnlyCollection<Map> maps)
         {
             // seed-to-soil
-            if (!maps.FirstOrDefault(map => map.MapType.Equals(MapType.SeedToSoil))!.TotalRange
-                     .TryGetValue(seed.Id, out var soil))
-            {
-                soil = seed.Id;
-            }
-            
+            var seedToSoilRanges = maps.FirstOrDefault(map => map.MapType.Equals(MapType.SeedToSoil))?.MapRanges;
+            var soil = MapSourceToDestination(seed.Id, seedToSoilRanges);
+
             // soil-to-fertilizer
-            if (!maps.FirstOrDefault(map => map.MapType.Equals(MapType.SoilToFertilizer))!.TotalRange
-                     .TryGetValue(soil, out var fertilizer))
-            {
-                fertilizer = soil;
-            }
+            var soilToFertilizer = maps.FirstOrDefault(map => map.MapType.Equals(MapType.SoilToFertilizer))?.MapRanges;
+            var fertilizer = MapSourceToDestination(soil, soilToFertilizer);
             
             // fertilizer-to-water
-            if (!maps.FirstOrDefault(map => map.MapType.Equals(MapType.FertilizerToWater))!.TotalRange
-                     .TryGetValue(fertilizer, out var water))
-            {
-                water = fertilizer;
-            }
+            var fertilizerToWater = maps.FirstOrDefault(map => map.MapType.Equals(MapType.FertilizerToWater))?.MapRanges;
+            var water = MapSourceToDestination(fertilizer, fertilizerToWater);
             
             // water-to-light
-            if (!maps.FirstOrDefault(map => map.MapType.Equals(MapType.WaterToLight))!.TotalRange
-                     .TryGetValue(water, out var light))
-            {
-                light = water;
-            }
+            var waterToLight = maps.FirstOrDefault(map => map.MapType.Equals(MapType.WaterToLight))?.MapRanges;
+            var light = MapSourceToDestination(water, waterToLight);
             
             // light-to-temperature
-            if (!maps.FirstOrDefault(map => map.MapType.Equals(MapType.LightToTemperature))!.TotalRange
-                     .TryGetValue(light, out var temperature))
-            {
-                temperature = light;
-            }
+            var lightToTemperature = maps.FirstOrDefault(map => map.MapType.Equals(MapType.LightToTemperature))?.MapRanges;
+            var temperature = MapSourceToDestination(light, lightToTemperature);
             
             // temperature-to-humidity
-            if (!maps.FirstOrDefault(map => map.MapType.Equals(MapType.TemperatureToHumidity))!.TotalRange
-                     .TryGetValue(temperature, out var humidity))
-            {
-                humidity = temperature;
-            }
+            var temperatureToHumidity = maps.FirstOrDefault(map => map.MapType.Equals(MapType.TemperatureToHumidity))?.MapRanges;
+            var humidity = MapSourceToDestination(temperature, temperatureToHumidity);
             
             // humidity-to-location
-            if (!maps.FirstOrDefault(map => map.MapType.Equals(MapType.HumidityToLocation))!.TotalRange
-                     .TryGetValue(humidity, out var location))
-            {
-                location = humidity;
-            }
+            var humidityToLocation = maps.FirstOrDefault(map => map.MapType.Equals(MapType.HumidityToLocation))?.MapRanges;
+            var location = MapSourceToDestination(humidity, humidityToLocation);
             
             // Console.WriteLine($"Seed: {seed.Id} | Soil: {soil} | Fertilizer: {fertilizer} | Water: {water} | Light: {light} | Temperature: {temperature} | Humidity: {humidity} | Location: {location}");
             
@@ -106,13 +104,13 @@ namespace AdventOfCode.Day5
             var map = new Map
             {
                 MapType = mapType, 
-                TotalRange = GetMapRangesForType(mapType, almanac).SelectMany(mapRange => mapRange.Range).ToDictionary(pair => pair.Key, pair => pair.Value)
+                MapRanges = GetMapRangesForType(mapType, almanac)
             };
 
             return map;
         }
 
-        private static IEnumerable<MapRange> GetMapRangesForType(MapType mapType, IReadOnlyCollection<string> almanac)
+        private static List<MapRange> GetMapRangesForType(MapType mapType, IReadOnlyCollection<string> almanac)
         {
             var indexOfMap = almanac.ToList().FindIndex(line => line.Contains(mapType));
             var mapLines = almanac
@@ -122,35 +120,16 @@ namespace AdventOfCode.Day5
                            .Select(mapItem => mapItem.line)
                            .ToList();
 
-            var mapRanges = mapLines.Select(line =>
+            return mapLines.Select(line =>
             {
                 var splitLine = line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(long.Parse).ToList();
                 return new MapRange
                 {
-                    DestinationOrigin = splitLine[0], 
-                    SourceOrigin = splitLine[1], 
-                    Step = splitLine[2]
+                    SourceRangeFirst = splitLine[1],
+                    SourceRangeLast = splitLine[1] + splitLine[2],
+                    SourceToDestinationDifference = splitLine[0] - splitLine[1]
                 };
             }).ToList();
-
-            foreach (var mapRange in mapRanges)
-            {
-                mapRange.Range = GetRangeFromDestinationAndSource(mapRange);
-            }
-
-            return mapRanges;
-        }
-
-        private static Dictionary<long, long> GetRangeFromDestinationAndSource(MapRange mapRange)
-        {
-            var range = new Dictionary<long, long>();
-
-            for (var i = 0; i < mapRange.Step; i++)
-            {
-                range.Add(mapRange.SourceOrigin + i, mapRange.DestinationOrigin + i);
-            }
-            
-            return range;
         }
     }
 }
