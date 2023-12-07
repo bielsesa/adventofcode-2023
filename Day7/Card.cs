@@ -2,6 +2,8 @@ namespace AdventOfCode.Day6;
 
 public struct Card
 {
+    private const string cardPriority = "23456789TJQKA";
+ 
     public static readonly Card A = new("A");
     public static readonly Card K = new("K");
     public static readonly Card Q = new("Q");
@@ -64,42 +66,7 @@ public struct Card
 
     public static bool operator >(Card a, Card b)
     {
-        if (a.Equals(A) && !b.Equals(A))
-            return true;
-        if (a.Equals(K) && !b.Equals(A) && !b.Equals(K))
-            return true;
-        if (a.Equals(Q) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q))
-            return true;
-        if (a.Equals(J) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J))
-            return true;
-        if (a.Equals(T) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T))
-            return true;
-        if (a.Equals(Nine) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) && !b.Equals(Nine))
-            return true;
-        if (a.Equals(Eight) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) 
-            && !b.Equals(Nine) && !b.Equals(Eight))
-            return true;
-        if (a.Equals(Seven) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) 
-            && !b.Equals(Nine) && !b.Equals(Eight) && !b.Equals(Seven))
-            return true;
-        if (a.Equals(Six) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) 
-            && !b.Equals(Nine) && !b.Equals(Eight) && !b.Equals(Seven) && !b.Equals(Six))
-            return true;
-        if (a.Equals(Five) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) 
-            && !b.Equals(Nine) && !b.Equals(Eight) && !b.Equals(Seven) && !b.Equals(Six) && !b.Equals(Five))
-            return true;
-        if (a.Equals(Four) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) 
-            && !b.Equals(Nine) && !b.Equals(Eight) && !b.Equals(Seven) && !b.Equals(Six) && !b.Equals(Five)
-            && !b.Equals(Four))
-            return true;
-        if (a.Equals(Three) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) 
-            && !b.Equals(Nine) && !b.Equals(Eight) && !b.Equals(Seven) && !b.Equals(Six) && !b.Equals(Five)
-            && !b.Equals(Four) && !b.Equals(Three))
-            return true;
-        
-        return a.Equals(Two) && !b.Equals(A) && !b.Equals(K) && !b.Equals(Q) && !b.Equals(J) && !b.Equals(T) 
-               && !b.Equals(Nine) && !b.Equals(Eight) && !b.Equals(Seven) && !b.Equals(Six) && !b.Equals(Five)
-               && !b.Equals(Four) && !b.Equals(Two);
+        return cardPriority.IndexOf(a) > cardPriority.IndexOf(b);
     }
 
     /// <summary>

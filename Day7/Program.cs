@@ -2,7 +2,7 @@
 
 namespace AdventOfCode.Day6;
 
-public class Day6
+public static class Day7
 {
     public static void Main(string[] args)
     {
