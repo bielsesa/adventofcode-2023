@@ -2,7 +2,7 @@ namespace AdventOfCode.Day6;
 
 public struct Card
 {
-    private const string cardPriority = "23456789TJQKA";
+    private const string cardPriority = "J23456789TQKA";
  
     public static readonly Card A = new("A");
     public static readonly Card K = new("K");
@@ -47,6 +47,15 @@ public struct Card
     private Card(string value)
     {
         this.value = value;
+    }
+
+    /// <summary>
+    /// Copy constructor
+    /// </summary>
+    /// <param name="card">The card to copy</param>
+    public Card(Card card)
+    {
+        this.value = card.value;
     }
 
     public static bool operator <=(Card a, Card b)

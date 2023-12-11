@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using Helpers;
+
 namespace AdventOfCode.Day6;
 
 public struct HandType
@@ -124,6 +127,37 @@ public struct HandType
     public override string ToString()
     {
         return value;
+    }
+
+    // transform jokers to card with the most repetition
+    public static (HandType handType, List<Card> cardsTransformed) GetHandTypeAndTransformedCards(
+        List<Card> originalCards)
+    {
+        if (originalCards.All(card => card.Equals(Card.J)))
+        {
+            return (FiveOfAKind, originalCards);
+        }
+        
+        List<Card> cardsTransformed;
+        var cardsWithoutJoker = new List<Card>(originalCards.Count);
+
+        originalCards.ForEach(card =>
+        {
+            if (!card.Equals(Card.J)) cardsWithoutJoker.Add(card);
+        });
+        
+        if (originalCards.Any(card => card.Equals(Card.J)))
+        {
+            cardsTransformed = originalCards.Select(card => card.Equals(Card.J) 
+                                                        ? EnumerableHelper<Card>.GetMostRepeatedItem(cardsWithoutJoker)
+                                                        : card).ToList();
+        }
+        else
+        {
+            cardsTransformed = originalCards;
+        }
+
+        return (GetHandTypeFromCards(cardsTransformed), cardsTransformed);
     }
 
     public static HandType GetHandTypeFromCards(List<Card> cards)

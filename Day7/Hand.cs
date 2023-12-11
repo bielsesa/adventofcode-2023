@@ -3,6 +3,7 @@ namespace AdventOfCode.Day6;
 public class Hand : IComparable
 {
     public List<Card> Cards { get; set; }
+    public List<Card> CardsTransformed { get; set; }
     public Card FirstCard => Cards[0];
     public Card SecondCard => Cards[1];
     public Card ThirdCard => Cards[2];
@@ -89,12 +90,14 @@ public class Hand : IComparable
     {
         var handAndBid = handAndBidLine.Split();
         var cards = handAndBid[0].ToCharArray().Select(cardString => Card.Parse(cardString.ToString())).ToList();
+        var (handType, cardsTransformed) = HandType.GetHandTypeAndTransformedCards(cards);
         
         return new Hand
         {
             Cards = cards,
+            CardsTransformed = cardsTransformed,
             Bid = long.Parse(handAndBid[1]),
-            HandType = HandType.GetHandTypeFromCards(cards)
+            HandType = handType
         };
     }
 }
