@@ -11,7 +11,6 @@ namespace Helpers
         {
             using var fs = File.Create(PathToOutput);
             
-            // writing data in string
             var info = new UTF8Encoding(true).GetBytes(string.Join(Environment.NewLine, lines));
             fs.Write(info, 0, info.Length);
         }
@@ -19,6 +18,19 @@ namespace Helpers
         public static IEnumerable<string> ReadPuzzleInputToLines()
         {
             return File.ReadLines(PathToInput);
+        }
+        
+        public static Stack<string> ReadPuzzleInputToStack()
+        {
+            var stack = new Stack<string>();
+            var lines = File.ReadLines(PathToInput);
+
+            foreach (var line in lines.Reverse())
+            {
+                stack.Push(line);
+            }
+            
+            return stack;
         }
         
         public static char[][] ReadPuzzleInputToMatrix()
