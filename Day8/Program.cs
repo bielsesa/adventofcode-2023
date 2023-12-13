@@ -21,13 +21,25 @@ public static class Day8
     {
         var input = FilesHelper.ReadPuzzleInputToLines().ToList();
 
-        var navigation = new Navigation(input.First());
-        input.RemoveAll(l => l.Equals(navigation.LeftRight)); // remove left/right instructions
+        var leftRightInstructions = input.First();
+        input.RemoveAll(l => l.Equals(leftRightInstructions)); // remove left/right instructions
         input.RemoveAll(string.IsNullOrWhiteSpace); // remove empty line between left/right instructions and nodes
         
         var nodes = input.Select(nodeLine => new Node(nodeLine)).ToList();
-        var currentNode = nodes.FirstOrDefault(node => node.Id.Equals("AAA"));
+        var startingNodes = nodes.Where(node => node.Type.Equals(NodeType.Start)).ToList();
 
+        var allSteps = 
+            startingNodes.Select(node => FindNeededStepsNumber(nodes, node, leftRightInstructions)).ToList();
+        
+        var steps = Lcm(allSteps);
+        
+        Console.WriteLine($"Steps taken to reach end node/s: {steps}");
+    }
+
+    private static long FindNeededStepsNumber(IReadOnlyCollection<Node> nodes, Node startingNode, string leftRightInstructions)
+    {
+        var navigation = new Navigation(leftRightInstructions);
+        var currentNode = new Node(startingNode);
         var goalFound = false;
         do
         {
@@ -42,13 +54,29 @@ public static class Day8
 
             currentNode = nodes.FirstOrDefault(node => node.Id.Equals(nextNodeId));
             
-            if (currentNode != null && currentNode.Id.Equals("ZZZ"))
+            if (currentNode != null && currentNode.Type.Equals(NodeType.End))
             {
                 goalFound = true;
             }
             
         } while (!goalFound);
-        
-        Console.WriteLine($"Steps taken to reach ZZZ: {navigation.Steps}");
+
+        return navigation.Steps;
+    }
+
+    private static long Gcd(long n1, long n2)
+    {
+        while (true)
+        {
+            if (n2 == 0) return n1;
+            var n3 = n1;
+            n1 = n2;
+            n2 = n3 % n2;
+        }
+    }
+
+    private static long Lcm(IEnumerable<long> numbers)
+    {
+        return numbers.Aggregate((s, val) => s * val / Gcd(s, val));
     }
 }
