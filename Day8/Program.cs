@@ -1,5 +1,4 @@
-﻿using System.Collections.Specialized;
-using Helpers;
+﻿using Helpers;
 
 namespace AdventOfCode;
 
@@ -31,7 +30,7 @@ public static class Day8
         var allSteps = 
             startingNodes.Select(node => FindNeededStepsNumber(nodes, node, leftRightInstructions)).ToList();
         
-        var steps = Lcm(allSteps);
+        var steps = MathHelper.Lcm(allSteps);
         
         Console.WriteLine($"Steps taken to reach end node/s: {steps}");
     }
@@ -62,21 +61,5 @@ public static class Day8
         } while (!goalFound);
 
         return navigation.Steps;
-    }
-
-    private static long Gcd(long n1, long n2)
-    {
-        while (true)
-        {
-            if (n2 == 0) return n1;
-            var n3 = n1;
-            n1 = n2;
-            n2 = n3 % n2;
-        }
-    }
-
-    private static long Lcm(IEnumerable<long> numbers)
-    {
-        return numbers.Aggregate((s, val) => s * val / Gcd(s, val));
     }
 }
